@@ -2,8 +2,15 @@ package main
 
 import (
 	"bufio"
+	"log"
 	"os"
 )
+
+func assertOk(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func getLines(filename string) ([]string, error) {
 	file, err := os.Open(filename)
