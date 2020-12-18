@@ -52,63 +52,87 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cubefield := initCubefield()
+	hf := initHyperfield()
 	initialX := fieldSize / 2
 	initialY := fieldSize / 2
 	initialZ := fieldSize / 2
+	initialW := fieldSize / 2
 	for i, line := range lines {
 		for j, str := range strings.Split(line, "") {
 			fmt.Println(i, j, str)
-			cubefield[initialZ][i+initialX][j+initialY] = str
+			hf[initialW][initialZ][i+initialX][j+initialY] = str
 		}
 	}
-	printCubefield(cubefield)
+	//printCubefield(cubefield)
 
 	type neighbor struct {
 		dx int
 		dy int
 		dz int
+		dw int
 	}
 	dirs := []neighbor{
-		{1, 1, 1}, {1, 1, 0}, {1, 1, -1},
-		{1, 0, 1}, {1, 0, 0}, {1, 0, -1},
-		{1, -1, 1}, {1, -1, 0}, {1, -1, -1},
-		{0, 1, 1}, {0, 1, 0}, {0, 1, -1},
-		{0, 0, 1} /*{0, 0, 0},*/, {0, 0, -1},
-		{0, -1, 1}, {0, -1, 0}, {0, -1, -1},
-		{-1, 1, 1}, {-1, 1, 0}, {-1, 1, -1},
-		{-1, 0, 1}, {-1, 0, 0}, {-1, 0, -1},
-		{-1, -1, 1}, {-1, -1, 0}, {-1, -1, -1},
+		{1, 1, 1, -1}, {1, 1, 0, -1}, {1, 1, -1, -1},
+		{1, 0, 1, -1}, {1, 0, 0, -1}, {1, 0, -1, -1},
+		{1, -1, 1, -1}, {1, -1, 0, -1}, {1, -1, -1, -1},
+		{0, 1, 1, -1}, {0, 1, 0, -1}, {0, 1, -1, -1},
+		{0, 0, 1, -1}, {0, 0, 0, -1}, {0, 0, -1, -1},
+		{0, -1, 1, -1}, {0, -1, 0, -1}, {0, -1, -1, -1},
+		{-1, 1, 1, -1}, {-1, 1, 0, -1}, {-1, 1, -1, -1},
+		{-1, 0, 1, -1}, {-1, 0, 0, -1}, {-1, 0, -1, -1},
+		{-1, -1, 1, -1}, {-1, -1, 0, -1}, {-1, -1, -1, -1},
+
+		{1, 1, 1, 0}, {1, 1, 0, 0}, {1, 1, -1, 0},
+		{1, 0, 1, 0}, {1, 0, 0, 0}, {1, 0, -1, 0},
+		{1, -1, 1, 0}, {1, -1, 0, 0}, {1, -1, -1, 0},
+		{0, 1, 1, 0}, {0, 1, 0, 0}, {0, 1, -1, 0},
+		{0, 0, 1, 0} /*{0, 0, 0, 0},*/, {0, 0, -1, 0},
+		{0, -1, 1, 0}, {0, -1, 0, 0}, {0, -1, -1, 0},
+		{-1, 1, 1, 0}, {-1, 1, 0, 0}, {-1, 1, -1, 0},
+		{-1, 0, 1, 0}, {-1, 0, 0, 0}, {-1, 0, -1, 0},
+		{-1, -1, 1, 0}, {-1, -1, 0, 0}, {-1, -1, -1, 0},
+
+		{1, 1, 1, 1}, {1, 1, 0, 1}, {1, 1, -1, 1},
+		{1, 0, 1, 1}, {1, 0, 0, 1}, {1, 0, -1, 1},
+		{1, -1, 1, 1}, {1, -1, 0, 1}, {1, -1, -1, 1},
+		{0, 1, 1, 1}, {0, 1, 0, 1}, {0, 1, -1, 1},
+		{0, 0, 1, 1}, {0, 0, 0, 1}, {0, 0, -1, 1},
+		{0, -1, 1, 1}, {0, -1, 0, 1}, {0, -1, -1, 1},
+		{-1, 1, 1, 1}, {-1, 1, 0, 1}, {-1, 1, -1, 1},
+		{-1, 0, 1, 1}, {-1, 0, 0, 1}, {-1, 0, -1, 1},
+		{-1, -1, 1, 1}, {-1, -1, 0, 1}, {-1, -1, -1, 1},
 	}
 	for round := 1; round <= 6; round++ {
 		fmt.Println("=========================")
-		nextCubefield := initCubefield()
+		nexthf := initHyperfield()
 		newActiveCount := 0
-		for i := 0; i < fieldSize; i++ {
-			for j := 0; j < fieldSize; j++ {
-				for k := 0; k < fieldSize; k++ {
-					numActiveNeighbors := 0
-					oldValue := cubefield[i][j][k]
-					for _, d := range dirs {
-						if inBounds(i+d.dx) && inBounds(j+d.dy) && inBounds(k+d.dz) &&
-							cubefield[i+d.dx][j+d.dy][k+d.dz] == "#" {
-							numActiveNeighbors++
+		for w := 0; w < fieldSize; w++ {
+			for i := 0; i < fieldSize; i++ {
+				for j := 0; j < fieldSize; j++ {
+					for k := 0; k < fieldSize; k++ {
+						numActiveNeighbors := 0
+						oldValue := hf[w][i][j][k]
+						for _, d := range dirs {
+							if inBounds(i+d.dx) && inBounds(j+d.dy) && inBounds(k+d.dz) && inBounds(w+d.dw) &&
+								hf[w+d.dw][i+d.dx][j+d.dy][k+d.dz] == "#" {
+								numActiveNeighbors++
+							}
 						}
-					}
-					if oldValue == "#" && (numActiveNeighbors == 2 || numActiveNeighbors == 3) {
-						nextCubefield[i][j][k] = "#"
-						newActiveCount++
-					} else if oldValue == "." && numActiveNeighbors == 3 {
-						nextCubefield[i][j][k] = "#"
-						newActiveCount++
-					} else {
-						nextCubefield[i][j][k] = "."
+						if oldValue == "#" && (numActiveNeighbors == 2 || numActiveNeighbors == 3) {
+							nexthf[w][i][j][k] = "#"
+							newActiveCount++
+						} else if oldValue == "." && numActiveNeighbors == 3 {
+							nexthf[w][i][j][k] = "#"
+							newActiveCount++
+						} else {
+							nexthf[w][i][j][k] = "."
+						}
 					}
 				}
 			}
 		}
-		cubefield = nextCubefield
-		printCubefield(cubefield)
+		hf = nexthf
+		//printCubefield(cubefield)
 		fmt.Println("After round", round, "active count is", newActiveCount)
 	}
 }
