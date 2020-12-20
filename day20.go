@@ -38,25 +38,45 @@ func cornerSearch(tiles []*Tile, edgeMap map[string][]int) []int {
 
 // returns the rotations for t1 where there's a match for t2
 // XXX need to handle flips better. need to determine both flip and rotations, not just rotation
-func findTileMatches(t1, t2 *Tile, baseRot int) map[int]bool {
+// edges are numbered like:
+//   __0__
+//  |     |
+// 3|  t2 |1
+//  |_____|
+//     2
+//
+//   __0__
+//  |     |
+// 3|  t1 |1
+//  |_____|
+//     2
+//
+// And we return the number of degrees we have to spin t1 such that its matching side faces up.
+type tilematch struct {
+	degrees int
+	flipped bool
+}
+
+func findTileMatches(t1, t2 *Tile, baseRot int) map[tilematch]bool {
 	if t2 == nil {
-		return map[int]bool{0: true, 90: true, 180: true, 270: true}
+		return map[tilematch]bool{
+			{0, true}: true, {90, true}: true, {180, true}: true, {270, true}: true,
+			{0, false}: true, {90, false}: true, {180, false}: true, {270, false}: true,
+		}
 	}
 	fmt.Println("----  matching", baseRot, t1.id, t2.id)
-	res := map[int]bool{}
+	res := map[tilematch]bool{}
 	for i := 0; i < 4; i++ {
 		t1e := t1.edges[i]
 		for j := 0; j < 4; j++ {
 			t2e := t2.edges[j]
-			if t1e == t2e {
-				fmt.Println("-  t1's edge", i, "matches t2's edge", j)
-				res[(90*i+baseRot)%360] = true
-				break
-			}
 			if t1e == reverse(t2e) {
+				fmt.Println("-  t1's edge", i, "matches t2's edge", j)
+				res[tilematch{(90*i + baseRot) % 360, false}] = true
+			}
+			if t1e == t2e {
 				fmt.Println("-  t1's edge", i, "matches t2's REVERSE edge", j)
-				res[(90*i+baseRot+180)%360] = true
-				break
+				res[tilematch{(90*i + baseRot + 180) % 360, true}] = true
 			}
 		}
 	}
@@ -86,9 +106,6 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 	for _, tileMap := range maps {
 		sideLength := len(tileMap)*(len(tiles[0].edges[0])-1) + 2
 		lines := make([][]string, sideLength)
-		//for i, _ := range lines {
-		//	lines[i] = make([]string, sideLength)
-		//}
 		for i := 0; i < len(tileMap); i++ {
 			tileRow := tileMap[i]
 			for j := 0; j < len(tileRow); j++ {
@@ -111,28 +128,33 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 				// flips!!!
 				topMatches := findTileMatches(tile, top, 0)
 				bottomMatches := findTileMatches(tile, bottom, 180)
-				leftMatches := findTileMatches(tile, left, 90)
-				rightMatches := findTileMatches(tile, right, 270)
+				leftMatches := findTileMatches(tile, left, 270)
+				rightMatches := findTileMatches(tile, right, 90)
 				rot := 0
-				matchRot := -1
+				flipped := false
 				for rot < 360 {
-					_, ok1 := topMatches[rot]
-					_, ok2 := bottomMatches[rot]
-					_, ok3 := leftMatches[rot]
-					_, ok4 := rightMatches[rot]
+					_, ok1 := topMatches[tilematch{rot, false}]
+					_, ok2 := bottomMatches[tilematch{rot, false}]
+					_, ok3 := leftMatches[tilematch{rot, false}]
+					_, ok4 := rightMatches[tilematch{rot, false}]
 					if ok1 && ok2 && ok3 && ok4 {
-						if matchRot > -1 {
-							log.Fatal("two matches!!")
-						}
-						matchRot = rot
+						flipped = false
+						break
+					}
+					_, ok1 = topMatches[tilematch{rot, true}]
+					_, ok2 = bottomMatches[tilematch{rot, true}]
+					_, ok3 = leftMatches[tilematch{rot, true}]
+					_, ok4 = rightMatches[tilematch{rot, true}]
+					if ok1 && ok2 && ok3 && ok4 {
+						flipped = false
+						break
 					}
 					rot += 90
 				}
-				rot = matchRot
-				if rot < 0 {
-					log.Fatal("no rotation found, matches:", topMatches, bottomMatches, leftMatches, rightMatches)
+				if rot < 0 || rot == 360 {
+					log.Fatal("no rotation found, matches:\n", topMatches, "\n", bottomMatches, "\n", leftMatches, "\n", rightMatches)
 				}
-				fmt.Println("Rotation", rot)
+				fmt.Println("= result placement: Rotation", rot, "flipped?", flipped)
 
 				// Add to lines
 				textLines := tile.raw
@@ -341,8 +363,8 @@ func main() {
 				edges: []string{
 					collected_lines[0],
 					edge4,
-					collected_lines[len(collected_lines)-1],
-					edge3,
+					reverse(collected_lines[len(collected_lines)-1]),
+					reverse(edge3),
 				},
 				raw: collected_lines,
 			}
