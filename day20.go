@@ -78,9 +78,9 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 		indexedTiles[t.id] = t
 	}
 	fmt.Println()
-	if true {
-		return
-	}
+	//if true {
+	//	return
+	//}
 	textTileLength := len(tiles[0].edges[0]) - 2
 	textSideLength := len(maps[0][0]) * textTileLength
 
@@ -222,7 +222,7 @@ func getTiledMaps(tiles []*Tile, edgeMap map[string][]int) [][][]maptile {
 
 	// 4 tile maps, with each corner at the top-left
 	var maps [][][]maptile
-	for cornerIdx := 0; cornerIdx < 1; cornerIdx++ {
+	for cornerIdx := 0; cornerIdx < 4; cornerIdx++ {
 		for flipIdx := 0; flipIdx <= 1; flipIdx++ {
 			flipped := false
 			if flipIdx == 1 {
@@ -371,16 +371,15 @@ func getInitialOrientation(edgeMap map[string][]int, tile *Tile, flipped bool) o
 func getEdge(startIdx int, mt *maptile) string {
 	idx := startIdx
 	turns := mt.or.degrees / 90
-	if !mt.or.flipped {
-		idx -= turns
-	} else {
-		idx += turns
-	}
+	idx -= turns
 	if idx < 0 {
 		idx = idx + 4
 	}
+	if mt.or.flipped && idx%2 == 1 {
+		idx += 2
+	}
 	idx = idx % 4
-	fmt.Println("---   idx", idx)
+	fmt.Println("---   facing edge idx", idx)
 	if mt.or.flipped {
 		return reverse(mt.t.edges[idx])
 	} else {
@@ -409,7 +408,8 @@ func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error
 				//	fmt.Println("--  match 1, i=", i, ", leftEdgeIdx", leftEdgeIdx)
 				return &orientation{
 					// XXX very confused about degree spins here
-					degrees: i * 90, // 360 + (i * -90),
+					//degrees: i * 90,
+					degrees: (360 + (i * -90)) % 360,
 					flipped: false,
 				}, nil
 			}
@@ -420,7 +420,8 @@ func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error
 			if tile.edges[leftEdgeIdx] == exposedLeft || left == nil {
 				//fmt.Println("--  match 2, i=", i, ", leftEdgeIdx", leftEdgeIdx)
 				return &orientation{
-					degrees: 360 + (i * -90),
+					degrees: i * 90,
+					//degrees: 360 + (i * -90),
 					flipped: true,
 				}, nil
 			}
@@ -431,8 +432,8 @@ func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error
 }
 
 func main() {
-	lines, err := getLines("day20_dbg.txt")
-	//	lines, err := getLines("day20_input.txt")
+	//lines, err := getLines("day20_dbg.txt")
+	lines, err := getLines("day20_input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
