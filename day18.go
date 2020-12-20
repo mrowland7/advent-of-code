@@ -28,14 +28,6 @@ type Expr struct {
 	value int
 }
 
-func reverse(s string) string {
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
-	}
-	return string(runes)
-}
-
 func parseExpr(line string) *Expr {
 	// fmt.Println("parsing line>", line)
 	if len(line) == 1 {
