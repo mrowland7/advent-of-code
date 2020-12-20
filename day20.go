@@ -64,7 +64,6 @@ type maptile struct {
 
 func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 	maps := getTiledMaps(tiles, edgeMap)
-	//maps = [][][]maptile{maps[0]}
 	for cornerIdx, tileMap := range maps {
 		fmt.Printf("\nmap %v is...", cornerIdx)
 		for _, row := range tileMap {
@@ -79,7 +78,7 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 		indexedTiles[t.id] = t
 	}
 	fmt.Println()
-	if false {
+	if true {
 		return
 	}
 	textTileLength := len(tiles[0].edges[0]) - 2
@@ -224,7 +223,7 @@ func getTiledMaps(tiles []*Tile, edgeMap map[string][]int) [][][]maptile {
 	// 4 tile maps, with each corner at the top-left
 	var maps [][][]maptile
 	for cornerIdx := 0; cornerIdx < 1; cornerIdx++ {
-		for flipIdx := 1; flipIdx <= 1; flipIdx++ {
+		for flipIdx := 0; flipIdx <= 1; flipIdx++ {
 			flipped := false
 			if flipIdx == 1 {
 				flipped = true
@@ -381,6 +380,7 @@ func getEdge(startIdx int, mt *maptile) string {
 		idx = idx + 4
 	}
 	idx = idx % 4
+	fmt.Println("---   idx", idx)
 	if mt.or.flipped {
 		return reverse(mt.t.edges[idx])
 	} else {
@@ -389,18 +389,18 @@ func getEdge(startIdx int, mt *maptile) string {
 }
 
 func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error) {
-	//fmt.Println("--  Getting orientation for tile", tile.id)
+	fmt.Println("--  Getting orientation for tile", tile.id)
 	var exposedUp, exposedLeft string
 	if up != nil {
 		exposedUp = getEdge(2, up)
 	}
 	if left != nil {
-		exposedLeft = getEdge(3, left)
+		exposedLeft = getEdge(1, left)
 	}
 
-	//fmt.Println("--  up is", exposedUp, "left is", exposedLeft)
+	fmt.Println("--  up is", exposedUp, "left is", exposedLeft)
 	for i, e := range tile.edges {
-		//fmt.Println("--  edge", i, "is", e)
+		fmt.Println("--  edge", i, "is", e)
 		// Normal match: you have to REVERSE the one edge, since they're store in clockwise order
 		if reverse(e) == exposedUp || up == nil {
 			// Possible... check if the others match
@@ -408,7 +408,8 @@ func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error
 			if reverse(tile.edges[leftEdgeIdx]) == exposedLeft || left == nil {
 				//	fmt.Println("--  match 1, i=", i, ", leftEdgeIdx", leftEdgeIdx)
 				return &orientation{
-					degrees: i * 90,
+					// XXX very confused about degree spins here
+					degrees: i * 90, // 360 + (i * -90),
 					flipped: false,
 				}, nil
 			}
@@ -419,7 +420,7 @@ func getOrientation(tile *Tile, up *maptile, left *maptile) (*orientation, error
 			if tile.edges[leftEdgeIdx] == exposedLeft || left == nil {
 				//fmt.Println("--  match 2, i=", i, ", leftEdgeIdx", leftEdgeIdx)
 				return &orientation{
-					degrees: i * 90,
+					degrees: 360 + (i * -90),
 					flipped: true,
 				}, nil
 			}
