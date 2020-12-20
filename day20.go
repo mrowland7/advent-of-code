@@ -37,25 +37,36 @@ func cornerSearch(tiles []*Tile, edgeMap map[string][]int) []int {
 }
 
 // returns the rotations for t1 where there's a match for t2
+// XXX need to handle flips better. need to determine both flip and rotations, not just rotation
 func findTileMatches(t1, t2 *Tile, baseRot int) map[int]bool {
 	if t2 == nil {
 		return map[int]bool{0: true, 90: true, 180: true, 270: true}
 	}
+	fmt.Println("----  matching", baseRot, t1.id, t2.id)
 	res := map[int]bool{}
 	for i := 0; i < 4; i++ {
 		t1e := t1.edges[i]
-		for _, t2e := range t2.edges {
-			if t1e == t2e || t1e == reverse(t2e) {
+		for j := 0; j < 4; j++ {
+			t2e := t2.edges[j]
+			if t1e == t2e {
+				fmt.Println("-  t1's edge", i, "matches t2's edge", j)
 				res[(90*i+baseRot)%360] = true
+				break
+			}
+			if t1e == reverse(t2e) {
+				fmt.Println("-  t1's edge", i, "matches t2's REVERSE edge", j)
+				res[(90*i+baseRot+180)%360] = true
 				break
 			}
 		}
 	}
+	fmt.Println("-  result", res)
 	return res
 }
 
 func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 	maps := getTiledMaps(tiles, edgeMap)
+	maps = [][][]int{maps[0]}
 	for cornerIdx, tileMap := range maps {
 		fmt.Printf("\nmap %v is...", cornerIdx)
 		for _, row := range tileMap {
@@ -69,16 +80,19 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 	for _, t := range tiles {
 		indexedTiles[t.id] = t
 	}
+	fmt.Println()
+
 	// Ok, now we have the maps. Time to search the seas!!
 	for _, tileMap := range maps {
 		sideLength := len(tileMap)*(len(tiles[0].edges[0])-1) + 2
 		lines := make([][]string, sideLength)
-		for i, _ := range lines {
-			lines[i] = make([]string, sideLength)
-		}
+		//for i, _ := range lines {
+		//	lines[i] = make([]string, sideLength)
+		//}
 		for i := 0; i < len(tileMap); i++ {
-			tileRow := tileMap[0]
+			tileRow := tileMap[i]
 			for j := 0; j < len(tileRow); j++ {
+				fmt.Println("=== Placing tile", i, j)
 				tileId := tileRow[j]
 				tile := indexedTiles[tileId]
 				var top, bottom, left, right *Tile
@@ -94,6 +108,7 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 				if j+1 < len(tileMap) {
 					right = indexedTiles[tileMap[i][j+1]]
 				}
+				// flips!!!
 				topMatches := findTileMatches(tile, top, 0)
 				bottomMatches := findTileMatches(tile, bottom, 180)
 				leftMatches := findTileMatches(tile, left, 90)
@@ -114,6 +129,10 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 					rot += 90
 				}
 				rot = matchRot
+				if rot < 0 {
+					log.Fatal("no rotation found, matches:", topMatches, bottomMatches, leftMatches, rightMatches)
+				}
+				fmt.Println("Rotation", rot)
 
 				// Add to lines
 				textLines := tile.raw
@@ -126,8 +145,18 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 				} else if rot == 270 {
 					// Bottom edge (reversed) matches right tile
 				}
-				for _, row := range textLines {
-					linesI := i * len(row)
+
+				for r := 0; r < len(textLines); r++ {
+					textSize := len(textLines[r])
+					lineRowStart := i * textSize
+					textToAdd := textLines[r][1 : textSize-1]
+					if j == 0 {
+						textToAdd = string(textLines[r][0]) + textToAdd
+					}
+					if j == len(tileRow)-1 {
+						textToAdd = textToAdd + string(textLines[r][textSize-1])
+					}
+					lines[lineRowStart+r] = append(lines[lineRowStart+r], strings.Split(textLines[r], "")...)
 				}
 			}
 		}
@@ -180,7 +209,6 @@ func seamonsterSearch(tiles []*Tile, edgeMap map[string][]int) {
 				}
 			}
 		}
-		fmt.Println()
 		fmt.Println("num monsters", seaMonsterCount, "sea roughness count:", seaCount)
 	}
 }
