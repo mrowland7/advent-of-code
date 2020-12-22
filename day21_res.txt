@@ -1,0 +1,10 @@
+eggs -> dtb
+fish -> zgk
+nuts -> pxr
+peanuts -> cqnl
+sesame -> xkclg
+shellfish -> xtzh
+soy -> jpnv
+wheat -> lsvlx
+
+
