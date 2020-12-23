@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/ring"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,7 +14,76 @@ func cpy(a []int) []int {
 	return b
 }
 
+func printRing(r *ring.Ring, num int) {
+	fmt.Printf("ring: ")
+	r2 := r
+	for i := 0; i < num; i++ {
+		fmt.Printf("%v-", r2.Value)
+		r2 = r2.Next()
+	}
+	fmt.Println()
+}
+
 func main() {
+	input := "871369452"
+	numCups := 1000000
+	numRounds := 10000000
+	//numCups := len(input) + 20
+	//	numRounds := 100
+	r := ring.New(numCups)
+	cache := map[int]*ring.Ring{}
+	for _, s := range strings.Split(input, "") {
+		n, err := strconv.Atoi(s)
+		assertOk(err)
+		r.Value = n
+		cache[n] = r
+		r = r.Next()
+	}
+	if numCups > len(input) {
+		for i := len(input) + 1; i < numCups+1; i++ {
+			r.Value = i
+			cache[i] = r
+			r = r.Next()
+		}
+	}
+	fmt.Println("starting")
+	for round := 1; round <= numRounds; round++ {
+		if round%10000 == 0 {
+			fmt.Println("round", round, "percent", (round*100.0)/(numRounds*1.0), "time", time.Now())
+		}
+		subring := r.Unlink(3)
+		destination := r.Value.(int)
+		for true {
+			destination--
+			if destination == 0 {
+				destination = numCups
+			}
+			if subring.Value.(int) != destination &&
+				subring.Next().Value.(int) != destination &&
+				subring.Next().Next().Value.(int) != destination {
+				break
+			}
+		}
+		toLinkBack := cache[destination]
+		toLinkBack.Link(subring)
+		r = r.Next()
+	}
+
+	if numCups < 100 {
+		fmt.Println("final is...")
+		printRing(r, numCups)
+	}
+	for i := 0; i < numCups; i++ {
+		if r.Value.(int) == 1 {
+			fmt.Println("next is", r.Next().Value.(int), "next next is", r.Next().Next().Value.(int))
+			break
+		}
+		r = r.Next()
+	}
+}
+
+// This way was too slow
+func main1() {
 	input := "871369452"
 	//input := "389125467"
 	numCups := 1000000
