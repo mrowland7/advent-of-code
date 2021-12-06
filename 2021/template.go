@@ -10,9 +10,7 @@ import (
 
 func main() {
 	lines, err := getLines("day7_input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+	asserOk(err)
 	for _, line := range lines {
 		fmt.Println(line)
 	}
