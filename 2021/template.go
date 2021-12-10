@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	//"regexp"
 	"fmt"
 	//	"strconv"
@@ -10,7 +9,7 @@ import (
 
 func main() {
 	lines, err := getLines("day7_input.txt")
-	asserOk(err)
+	assertOk(err)
 	for _, line := range lines {
 		fmt.Println(line)
 	}
