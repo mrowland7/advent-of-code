@@ -50,12 +50,6 @@ func main() {
 			ruleResult := rules[pair]
 			new1 := string(pair[0]) + ruleResult
 			new2 := ruleResult + string(pair[1])
-			if _, ok := newPairs[new1]; !ok {
-				newPairs[new1] = 0
-			}
-			if _, ok := newPairs[new2]; !ok {
-				newPairs[new2] = 0
-			}
 			newPairs[new1] += ct
 			newPairs[new2] += ct
 		}
